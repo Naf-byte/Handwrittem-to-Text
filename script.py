@@ -4,6 +4,7 @@ import mimetypes
 import zipfile
 from datetime import date
 from io import BytesIO
+from google import genai
 
 import streamlit as st
 from google import genai
