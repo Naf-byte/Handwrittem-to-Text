@@ -1,0 +1,6 @@
+streamlit
+google-genai
+pdf2image
+pillow
+python-docx
+fpdf
