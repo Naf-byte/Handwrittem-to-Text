@@ -52,7 +52,8 @@ st.markdown(
 )
 
 # ←── API & USAGE ───────────────────────────────────────────────────────────────
-DEFAULT_API_KEY = " "
+# DEFAULT_API_KEY = " "
+DEFAULT_API_KEY = st.secrets["genai"]["api_key"]  
 USAGE_FILE = "usage.json"
 DAILY_LIMIT = 5
 
