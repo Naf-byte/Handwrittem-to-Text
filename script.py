@@ -11,7 +11,8 @@ from google import genai
 from google.genai import types
 
 # for PDF → image
-from pdf2image import convert_from_bytes  # pip install pdf2image pillow
+# from pdf2image import convert_from_bytes  # pip install pdf2image pillow
+import fitz
 # for DOCX output
 from docx import Document             # pip install python-docx
 # for PDF output
@@ -157,13 +158,29 @@ if upload and st.button("▶️ Convert"):
             if input_type == "Image":
                 texts.append(ocr_with_gemini(client, raw, upload.name, prompt))
 
-            elif input_type == "PDF":
-                pages = convert_from_bytes(raw, dpi=300)
-                for i, page in enumerate(pages, start=1):
-                    buf = BytesIO()
-                    page.save(buf, format="PNG")
-                    texts.append(ocr_with_gemini(client, buf.getvalue(), f"page-{i}.png", prompt))
+            # elif input_type == "PDF":
+            #     pages = convert_from_bytes(raw, dpi=300)
+            #     for i, page in enumerate(pages, start=1):
+            #         buf = BytesIO()
+            #         page.save(buf, format="PNG")
 
+            elif input_type == "PDF":
+                # Render each PDF page to a PNG (no external binaries needed)
+                with fitz.open(stream=raw, filetype="pdf") as doc:
+                    if doc.page_count == 0:
+                        st.error("No pages found in the PDF.")
+                        st.stop()
+                    for i, page in enumerate(doc, start=1):
+                        # 300 dpi rendering: zoom factor = dpi / 72
+                        zoom = 300 / 72
+                        mat = fitz.Matrix(zoom, zoom)
+                        pix = page.get_pixmap(matrix=mat, alpha=False)
+                        img_bytes = pix.tobytes("png")
+                        texts.append(
+                            ocr_with_gemini(client, img_bytes, f"page-{i}.png", prompt)
+                        )
+
+            
             else:  # Word (.docx)
                 z = zipfile.ZipFile(BytesIO(raw))
                 imgs = [n for n in z.namelist() if n.startswith("word/media/")]
@@ -205,3 +222,4 @@ if upload and st.button("▶️ Convert"):
 
         except Exception as e:
             st.error(f"❌ Error: {e}")
+
